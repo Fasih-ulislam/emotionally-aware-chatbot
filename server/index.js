@@ -1,91 +1,196 @@
-const express = require('express')
-const cors = require('cors')
-const dotenv = require('dotenv')
-const { GoogleGenerativeAI } = require('@google/generative-ai')
+const express = require("express");
+const cors = require("cors");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const dotenv = require("dotenv");
+const path = require("path");
 
-dotenv.config()
+const envPath = path.resolve(__dirname, "../.env");
+dotenv.config({ path: envPath });
 
-const app = express()
+const app = express();
 
-app.use(
-  cors({
-    origin: 'http://localhost:5173',
-  }),
-)
-app.use(express.json({ limit: '1mb' }))
+app.use(cors({ origin: "http://localhost:5173" }));
+app.use(express.json({ limit: "1mb" }));
 
-const GEMINI_MODEL = 'gemini-2.0-flash-lite'
+const GEMINI_MODEL = "gemini-2.5-flash";
+const VOICE_ID = "onwK4e9ZLuTAKqWW03F9"; // Daniel - professional male voice
 
+// Return emotion-adjusted voice settings for ElevenLabs TTS
+function getVoiceSettings(emotion) {
+  const baseSettings = {
+    stability: 0.5,
+    similarity_boost: 0.75,
+    style: 0.5,
+    use_speaker_boost: true,
+  };
+
+  const emotionAdjustments = {
+    happy: {
+      stability: 0.4,
+      style: 0.7,
+    },
+    sad: {
+      stability: 0.7,
+      style: 0.2,
+    },
+    angry: {
+      stability: 0.3,
+      style: 0.8,
+    },
+    fearful: {
+      stability: 0.5,
+      style: 0.6,
+    },
+    disgusted: {
+      stability: 0.6,
+      style: 0.4,
+    },
+    surprised: {
+      stability: 0.35,
+      style: 0.75,
+    },
+    neutral: {
+      stability: 0.5,
+      style: 0.5,
+    },
+  };
+
+  const adjustments = emotionAdjustments[emotion] || emotionAdjustments.neutral;
+
+  return {
+    ...baseSettings,
+    ...adjustments,
+  };
+}
+
+// Text-to-speech endpoint: converts text to emotion-aware audio via ElevenLabs
+app.post("/api/speak", async (req, res) => {
+  try {
+    const { text, emotion = "neutral" } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "No text provided" });
+    }
+
+    if (!process.env.ELEVENLABS_API_KEY) {
+      return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
+    }
+
+    const voiceSettings = getVoiceSettings(emotion);
+
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "xi-api-key": process.env.ELEVENLABS_API_KEY,
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: "eleven_turbo_v2_5",
+          voice_settings: voiceSettings,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({
+        error: "TTS request failed",
+        details: errorText,
+      });
+    }
+
+    const audioBuffer = await response.arrayBuffer();
+
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Content-Length": audioBuffer.byteLength,
+    });
+
+    res.send(Buffer.from(audioBuffer));
+  } catch (err) {
+    res.status(500).json({
+      error: "Failed to generate speech",
+      message: err.message,
+    });
+  }
+});
+
+// Convert chat message history to Gemini API format
 function toGeminiHistory(messages) {
   const filtered = Array.isArray(messages)
     ? messages.filter(
         (m) =>
           m &&
-          (m.role === 'user' || m.role === 'assistant') &&
-          typeof m.content === 'string',
+          (m.role === "user" || m.role === "assistant") &&
+          typeof m.content === "string",
       )
-    : []
+    : [];
 
   const history = filtered.map((m) => {
-    if (m.role === 'user') {
-      return { role: 'user', parts: [{ text: m.content }] }
+    if (m.role === "user") {
+      return { role: "user", parts: [{ text: m.content }] };
     }
-    // Gemini uses "model" for assistant turns.
-    return { role: 'model', parts: [{ text: m.content }] }
-  })
+    return { role: "model", parts: [{ text: m.content }] };
+  });
 
-  // Gemini requires the first turn to be from "user". Be defensive.
   if (history.length === 0) {
-    return [{ role: 'user', parts: [{ text: '' }] }]
+    return [{ role: "user", parts: [{ text: "" }] }];
   }
-  if (history[0].role !== 'user') {
-    history.unshift({ role: 'user', parts: [{ text: '' }] })
+  if (history[0].role !== "user") {
+    history.unshift({ role: "user", parts: [{ text: "" }] });
   }
 
-  return history
+  return history;
 }
 
-app.post('/api/chat', async (req, res) => {
+// Chat endpoint: generates emotion-aware responses using Gemini
+app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, systemPrompt } = req.body || {}
+    const { messages, systemPrompt, emotion } = req.body || {};
 
     if (!process.env.GEMINI_API_KEY) {
-      return res
-        .status(500)
-        .json({ error: 'Missing GEMINI_API_KEY in .env' })
+      return res.status(500).json({ error: "Missing GEMINI_API_KEY in .env" });
     }
     if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: '`messages` must be an array' })
+      return res.status(400).json({ error: "`messages` must be an array" });
     }
-    if (typeof systemPrompt !== 'string') {
-      return res.status(400).json({ error: '`systemPrompt` must be a string' })
+    if (typeof systemPrompt !== "string") {
+      return res.status(400).json({ error: "`systemPrompt` must be a string" });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === "user" && emotion) {
+      lastMessage.content = `
+    [USER_TEXT]: ${lastMessage.content}
+    [USER_FACIAL_EXPRESSION]: ${emotion.label} (Confidence: ${emotion.score})
+  `.trim();
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: GEMINI_MODEL,
       systemInstruction: systemPrompt,
-    })
+    });
 
     const result = await model.generateContent({
       contents: toGeminiHistory(messages),
-    })
+    });
 
-    const text = result?.response?.text?.() || ''
+    const text = result?.response?.text?.() || "";
 
-    return res.json({ text })
+    return res.json({ text });
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err)
     return res.status(500).json({
       error: err?.message || String(err),
-    })
+    });
   }
-})
+});
 
-const PORT = 3001
+// Start server on port 3001
+const PORT = 3001;
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Emotion chat server running on http://localhost:${PORT}`)
-})
-
+  console.log(`Server running on http://localhost:${PORT}`);
+});

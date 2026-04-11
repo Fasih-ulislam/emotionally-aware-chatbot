@@ -1,0 +1,89 @@
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.avatar-container:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.avatar-canvas {
+  border-radius: 12px;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4));
+}
+
+.avatar-info {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar-emotion-label {
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.avatar-speaking-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  animation: pulse-speak 1s ease-in-out infinite;
+}
+
+@keyframes pulse-speak {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Emotion-specific glow effects */
+.avatar-container[data-emotion="happy"] {
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.15);
+}
+
+.avatar-container[data-emotion="sad"] {
+  box-shadow: 0 0 30px rgba(96, 165, 250, 0.15);
+}
+
+.avatar-container[data-emotion="angry"] {
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.15);
+}
+
+.avatar-container[data-emotion="surprised"] {
+  box-shadow: 0 0 30px rgba(249, 115, 22, 0.15);
+}
+
+.avatar-container[data-emotion="fearful"] {
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.15);
+}
+
+.avatar-container[data-emotion="disgusted"] {
+  box-shadow: 0 0 30px rgba(251, 146, 60, 0.15);
+}
+
+.avatar-container[data-emotion="neutral"] {
+  box-shadow: 0 0 30px rgba(148, 163, 184, 0.1);
+}
