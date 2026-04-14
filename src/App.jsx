@@ -10,7 +10,14 @@ import useSpeech from "./hooks/useSpeech.js";
 // Main app component - coordinates emotion detection, chat, and audio response
 export default function App() {
   const { speak, stop, isSpeaking } = useSpeech();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hi there! I'm your emotionally intelligent assistant. I can see how you're feeling through your camera and I'll do my best to respond in a way that suits your mood. Feel free to share whatever's on your mind. I'm here to listen and help.",
+      emotion: null,
+    },
+  ]);
   const [currentEmotion, setCurrentEmotion] = useState({
     emotion: "neutral",
     confidence: 0,
