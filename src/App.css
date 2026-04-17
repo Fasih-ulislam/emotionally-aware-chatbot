@@ -15,14 +15,20 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
 }
 
 .app-shell {
-  min-height: 100svh;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(
       1200px 700px at 15% 0%,
@@ -49,6 +55,9 @@ body {
   padding: 18px;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ===== UPDATED: Header always on top ===== */
@@ -85,6 +94,7 @@ body {
   gap: 18px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* ===== NEW: Chat section (left side) ===== */
@@ -93,11 +103,14 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
-/* ===== UPDATED: Chat window ===== */
+/* ===== UPDATED: Chat window — fixed height, internal scroll ===== */
 .chat-window {
-  height: min(58svh, 520px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 16px;
   background: rgba(255, 255, 255, 0.02);
@@ -106,7 +119,36 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: 1;
+}
+
+/* ===== Custom scrollbar — purple theme ===== */
+.chat-window::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-window::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.chat-window::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.chat-window::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #d4a5ff, var(--accent));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar */
+.chat-window {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) rgba(255, 255, 255, 0.03);
 }
 
 .message-row {
@@ -223,11 +265,11 @@ body {
 }
 
 .emotion-meta {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .emotion-emoji {
@@ -409,7 +451,7 @@ body {
   }
 
   .chat-window {
-    height: min(45svh, 380px);
+    max-height: min(45svh, 380px);
   }
 
   .app-header {
@@ -447,7 +489,7 @@ body {
   }
 
   .chat-window {
-    height: min(40svh, 320px);
+    max-height: min(40svh, 320px);
     padding: 12px;
   }
 
@@ -468,11 +510,13 @@ body {
 }
 /* Right panel - Avatar + Webcam */
 .right-panel {
-  width: 280px;
+  width: 240px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .right-panel .emotion-detector {
@@ -481,7 +525,7 @@ body {
 }
 
 .right-panel .emotion-media {
-  height: 150px;
+  height: 120px;
 }
 
 @media (max-width: 860px) {

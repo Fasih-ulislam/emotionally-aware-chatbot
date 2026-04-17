@@ -613,8 +613,8 @@ export default function Avatar({ emotion = "neutral", isSpeaking = false }) {
     <div className="avatar-container" data-emotion={emotion}>
       <canvas
         ref={canvasRef}
-        width={220}
-        height={260}
+        width={200}
+        height={220}
         className="avatar-canvas"
       />
       <div className="avatar-info">
