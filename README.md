@@ -44,7 +44,7 @@ Emotion Chat is a real-time web application that detects your facial expression 
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/emotion-chat.git
+git clone https://github.com/Fasih-ulislam/emotionally-aware-chatbot
 cd emotion-chat
 npm install
 ```
