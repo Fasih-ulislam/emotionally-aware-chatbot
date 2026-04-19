@@ -6,6 +6,10 @@ Emotion Chat is a real-time web application that detects your facial expression 
 
 ---
 
+## Demo
+
+🔗 Demo Video: [Youtube Link](https://www.youtube.com/watch?v=qxu1Bnkxogo)
+
 ## ✨ Features
 
 - **Live Emotion Detection** — Uses your webcam and face-api.js to detect 7 emotions in real time: happy, sad, angry, fearful, disgusted, surprised, and neutral
